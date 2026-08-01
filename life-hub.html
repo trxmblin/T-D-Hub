@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Our Hub</title>
+<meta name="theme-color" content="#e2725b">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Our Hub">
+<style>
+:root{
+  --bg:#faf7f2; --card:#ffffff; --ink:#2d2a26; --muted:#8a8478; --line:#ece7de;
+  --a:#e2725b; --a-soft:#fdeeea; --b:#3d8b87; --b-soft:#e6f2f1; --both:#7a6bb5; --both-soft:#efecf8;
+  --accent:#e2725b; --ok:#4a9e6b; --warn:#d9a441; --err:#c94f4f;
+  --r:14px; --shadow:0 1px 3px rgba(45,42,38,.07), 0 4px 16px rgba(45,42,38,.05);
+  --hdr:rgba(250,247,242,.92);
+}
+html[data-theme="dark"]{
+  --bg:#1b1916; --card:#262320; --ink:#ece7de; --muted:#9a938a; --line:#3a352f;
+  --a-soft:#43302b; --b-soft:#253734; --both-soft:#322e42;
+  --hdr:rgba(27,25,22,.92); --shadow:0 1px 3px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;padding-bottom:70px}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:inherit;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--card);width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+header{position:sticky;top:0;z-index:40;background:var(--hdr);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:10px}
+header h1{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.sync-dot{width:9px;height:9px;border-radius:50%;background:#c5bfb4;flex:none}
+.sync-dot.ok{background:var(--ok)} .sync-dot.sync{background:var(--warn);animation:pulse 1s infinite} .sync-dot.err{background:var(--err)}
+@keyframes pulse{50%{opacity:.35}}
+.sync-label{font-size:12px;color:var(--muted);margin-right:auto}
+.gear{font-size:19px;padding:4px 8px;border-radius:8px}
+.gear:hover{background:var(--line)}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+nav button{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;color:var(--muted);padding:5px 10px;border-radius:10px;flex:1;max-width:90px}
+nav button .ic{font-size:20px;line-height:1.2}
+nav button.on{color:var(--accent);background:var(--a-soft);font-weight:600}
+main{max-width:760px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.card h2{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card h2 .spacer{margin-left:auto}
+.btn{background:var(--accent);color:#fff;border-radius:10px;padding:9px 16px;font-weight:600;font-size:14px}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.sm{padding:5px 11px;font-size:13px;border-radius:8px}
+.btn.gray{background:var(--line);color:var(--ink)}
+.chip{font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.chip.a{background:var(--a-soft);color:var(--a)} .chip.b{background:var(--b-soft);color:var(--b)} .chip.both{background:var(--both-soft);color:var(--both)}
+.muted{color:var(--muted);font-size:13px}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:18px 0}
+.row{display:flex;gap:8px;align-items:center}
+.item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:none}
+.item .grow{flex:1;min-width:0}
+.item .title{font-size:14.5px;font-weight:500}
+.item .sub{font-size:12.5px;color:var(--muted)}
+.xbtn{color:#c5bfb4;font-size:16px;padding:4px 7px;border-radius:8px;flex:none}
+.xbtn:hover{color:var(--err);background:var(--a-soft)}
+.done .title{text-decoration:line-through;color:var(--muted)}
+.ckb{width:21px;height:21px;border-radius:7px;border:2px solid #cfc9be;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:var(--card)}
+.hbtn{color:#c5bfb4;font-size:15px;padding:4px 6px;border-radius:8px;flex:none}
+.hbtn.on{color:var(--a)}
+.ckb.on{background:var(--ok);border-color:var(--ok)}
+/* calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-head b{font-size:15px}
+.cal-nav{font-size:17px;padding:4px 12px;border-radius:8px;background:var(--line)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-grid .dow{font-size:10.5px;color:var(--muted);text-align:center;font-weight:600;padding:3px 0}
+.cal-cell{aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;gap:2px;position:relative}
+.cal-cell.off{color:#cfc9be}
+.cal-cell.today{background:var(--a-soft);font-weight:700;color:var(--a)}
+.cal-cell.sel{outline:2px solid var(--accent)}
+.cal-cell:hover{background:var(--line)}
+.dots{display:flex;gap:2px;height:5px}
+.dots i{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.dots i.b{background:var(--b)} .dots i.both{background:var(--both)}
+/* meals */
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.meal-day{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:9px}
+.meal-day.today{border-color:var(--a)}
+.meal-day .d{font-size:13px;font-weight:700;margin-bottom:5px}
+.meal-day .d span{color:var(--muted);font-weight:400}
+.meal-entry{display:flex;align-items:center;gap:7px;font-size:14px;padding:3px 0}
+.meal-entry .rec{font-size:11px;color:var(--b);background:var(--b-soft);padding:1px 7px;border-radius:99px}
+.addline{display:flex;gap:6px;margin-top:6px}
+.addline input{padding:6px 10px;font-size:13.5px}
+.addline select{width:auto;padding:6px 8px;font-size:13px;max-width:130px}
+/* tabs inside pages */
+.subtabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.subtabs button{font-size:13px;padding:6px 13px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--muted);font-weight:500}
+.subtabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* notes */
+.note-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow);cursor:pointer}
+.note b{font-size:14px;display:block;margin-bottom:3px}
+.note p{font-size:13px;color:var(--muted);white-space:pre-wrap;max-height:110px;overflow:hidden}
+.note .chip{margin-top:8px;display:inline-block}
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(45,42,38,.4);z-index:60;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:600px){.overlay{align-items:center}}
+.modal{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;padding:20px}
+@media(min-width:600px){.modal{border-radius:18px}}
+.modal h3{font-size:17px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px}
+.seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;padding:7px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow);font-weight:600}
+.modal-actions{display:flex;gap:8px;margin-top:16px}
+.modal-actions .btn{flex:1}
+.danger-link{color:var(--err);font-size:13px;background:none;text-decoration:underline}
+/* home */
+.hero{padding:6px 2px 14px}
+.hero .hi{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.hero .sub{color:var(--muted);font-size:14px}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.quick button{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px}
+.quick button span{font-size:17px}
+.badge{background:var(--a);color:#fff;font-size:11px;font-weight:700;border-radius:99px;padding:1px 7px}
+code{background:var(--bg);padding:2px 6px;border-radius:6px;font-size:12.5px}
+.setup-steps{font-size:13.5px;color:var(--ink)}
+.setup-steps li{margin:6px 0 6px 18px}
+a{color:var(--b)}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="appTitle">Our Hub</h1>
+  <div class="sync-dot" id="syncDot"></div>
+  <div class="sync-label" id="syncLabel">not synced</div>
+  <button class="gear" onclick="openSettings()" title="Settings">⚙︎</button>
+</header>
+
+<main id="main"></main>
+
+<nav id="nav">
+  <button data-t="home"><span class="ic">☀️</span>Home</button>
+  <button data-t="cal"><span class="ic">📅</span>Calendar</button>
+  <button data-t="meals"><span class="ic">🍽️</span>Meals</button>
+  <button data-t="todos"><span class="ic">✅</span>To Dos</button>
+  <button data-t="notes"><span class="ic">📝</span>Notes</button>
+</nav>
+
+<div id="modalRoot"></div>
+
+<script>
+"use strict";
+/* ============ state ============ */
+const LS_STATE='lifehub_state', LS_TOKEN='lifehub_token', LS_GIST='lifehub_gist';
+const GIST_FILE='life-hub.json';
+const blank=()=>({updatedAt:0,settings:{nameA:'Darcy',nameB:'Tara',theme:'auto'},events:[],todos:[],notes:[],recipes:[],meals:{},grocery:[],mealFavs:[]});
+let state=blank();
+try{const s=localStorage.getItem(LS_STATE); if(s){state=Object.assign(blank(),JSON.parse(s));}}catch(e){}
+let token=localStorage.getItem(LS_TOKEN)||'';
+let gistId=localStorage.getItem(LS_GIST)||'';
+let tab='home', calMonth=new Date(), calSel=null, mealWeekStart=monday(new Date()), mealSub='plan', todoFilter='all';
+
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const dstr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayStr=()=>dstr(new Date());
+function parseD(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function monday(d){const x=new Date(d);x.setHours(0,0,0,0);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);return x;}
+const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function niceDate(s){const d=parseD(s),t=new Date();t.setHours(0,0,0,0);const diff=Math.round((d-t)/864e5);
+  if(diff===0)return 'Today'; if(diff===1)return 'Tomorrow'; if(diff===-1)return 'Yesterday';
+  const base=DOW[(d.getDay()+6)%7]+' '+d.getDate()+' '+MON[d.getMonth()].slice(0,3);
+  return d.getFullYear()!==t.getFullYear()?base+' '+d.getFullYear():base;}
+function fmtTime(t){if(!t)return'';const[h,m]=t.split(':').map(Number);const ap=h>=12?'pm':'am';const h12=h%12||12;return h12+(m?':'+pad(m):'')+ap;}
+function whoName(w){return w==='a'?state.settings.nameA:w==='b'?state.settings.nameB:'Both';}
+function whoChip(w){return '<span class="chip '+w+'">'+esc(whoName(w))+'</span>';}
+
+function saveLocal(){localStorage.setItem(LS_STATE,JSON.stringify(state));}
+function applyTheme(){
+  const t=(state.settings&&state.settings.theme)||'auto';
+  let dark=t==='dark';
+  if(t==='auto'&&window.matchMedia){dark=window.matchMedia('(prefers-color-scheme: dark)').matches;}
+  document.documentElement.dataset.theme=dark?'dark':'light';
+}
+if(window.matchMedia){try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);}catch(e){}}
+/* recurrence */
+const REPS={none:'',weekly:'weekly',fortnightly:'fortnightly',monthly:'monthly',yearly:'yearly'};
+function occursOn(e,ds){
+  if(e.date===ds)return true;
+  if(!e.repeat||e.repeat==='none'||ds<e.date)return false;
+  const days=Math.round((parseD(ds)-parseD(e.date))/864e5);
+  if(e.repeat==='weekly')return days%7===0;
+  if(e.repeat==='fortnightly')return days%14===0;
+  const b=parseD(e.date),c=parseD(ds);
+  if(e.repeat==='monthly')return b.getDate()===c.getDate();
+  if(e.repeat==='yearly')return b.getDate()===c.getDate()&&b.getMonth()===c.getMonth();
+  return false;
+}
+function nextOccur(e,fromStr){
+  if(!e.repeat||e.repeat==='none')return e.date>=fromStr?e.date:null;
+  if(e.date>=fromStr)return e.date;
+  const from=parseD(fromStr),base=parseD(e.date);
+  if(e.repeat==='weekly'||e.repeat==='fortnightly'){
+    const step=e.repeat==='weekly'?7:14;
+    const diff=Math.ceil((from-base)/(step*864e5));
+    const d=new Date(base);d.setDate(d.getDate()+diff*step);
+    return dstr(d);
+  }
+  for(let i=0;i<800;i++){
+    const d=new Date(from);d.setDate(d.getDate()+i);
+    if(occursOn(e,dstr(d)))return dstr(d);
+  }
+  return null;
+}
+function mutate(fn){fn(state);state.updatedAt=Date.now();saveLocal();schedulePush();render();}
+
+/* ============ sync (GitHub Gist) ============ */
+let pushTimer=null, syncing=false, pausedUntil=0;
+function setStatus(cls,label){document.getElementById('syncDot').className='sync-dot '+cls;document.getElementById('syncLabel').textContent=label;}
+function rlCheck(){
+  if(pausedUntil&&Date.now()<pausedUntil){
+    setStatus('err','paused until '+new Date(pausedUntil).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+    return true;
+  }
+  pausedUntil=0;return false;
+}
+async function gh(path,opts={}){
+  // cache:'no-store' stops the browser replaying stale error responses
+  const r=await fetch('https://api.github.com'+path,{...opts,cache:'no-store',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','If-None-Match':'',...(opts.headers||{})}});
+  if(!r.ok){
+    if(r.status===403&&r.headers.get('x-ratelimit-remaining')==='0'){
+      const reset=Number(r.headers.get('x-ratelimit-reset'))*1000;
+      pausedUntil=(reset&&reset>Date.now())?reset+5000:Date.now()+15*60*1000;
+      const err=new Error('GitHub rate limit — sync paused until '+new Date(pausedUntil).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'. Your token is fine.');
+      err.rateLimit=true;throw err;
+    }
+    if(r.status===401)throw new Error('Token rejected — check it was copied fully and has the gist scope.');
+    if(r.status===404)throw new Error('Gist not found — it may have been deleted.');
+    const t=await r.text().catch(()=>'' );throw new Error('GitHub '+r.status+' '+t.slice(0,120));
+  }
+  return r.status===204?null:r.json();
+}
+async function connectGist(newToken){
+  token=newToken.trim();
+  if(rlCheck())throw new Error('Rate limited — try again after '+new Date(pausedUntil).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+  setStatus('sync','connecting…');
+  await gh('/user'); // validate token
+  // Reuse a known gist first so devices never drift onto duplicate copies
+  if(gistId){try{await gh('/gists/'+gistId);}catch(e){if(!e.rateLimit)gistId='';else throw e;}}
+  if(!gistId){
+    const gists=await gh('/gists?per_page=100');
+    const g=(gists||[]).find(g=>g.files&&g.files[GIST_FILE]);
+    if(g){gistId=g.id;}
+    else{
+      const created=await gh('/gists',{method:'POST',body:JSON.stringify({description:'Our Hub — shared life data (do not delete)',public:false,files:{[GIST_FILE]:{content:JSON.stringify(state)}}})});
+      gistId=created.id;
+    }
+  }
+  localStorage.setItem(LS_TOKEN,token);
+  localStorage.setItem(LS_GIST,gistId);
+  await pull();
+  setStatus('ok','synced');
+}
+async function pull(){
+  if(!token||!gistId||rlCheck())return;
+  try{
+    syncing=true;setStatus('sync','syncing…');
+    const g=await gh('/gists/'+gistId);
+    const f=g.files&&g.files[GIST_FILE];
+    if(!f){throw new Error('data file missing in gist');}
+    let content=f.content;
+    if(f.truncated){content=await (await fetch(f.raw_url,{cache:'no-store'})).text();}
+    const remote=JSON.parse(content);
+    if((remote.updatedAt||0)>(state.updatedAt||0)){state=Object.assign(blank(),remote);saveLocal();render();}
+    else if((state.updatedAt||0)>(remote.updatedAt||0)){await pushNow();}
+    setStatus('ok','synced '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+  }catch(e){console.error(e);setStatus('err',e.rateLimit?'paused (rate limit)':'sync error');}
+  finally{syncing=false;}
+}
+async function pushNow(){
+  if(!token||!gistId||rlCheck())return;
+  try{
+    setStatus('sync','saving…');
+    await gh('/gists/'+gistId,{method:'PATCH',body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(state)}}})});
+    setStatus('ok','synced '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+  }catch(e){console.error(e);setStatus('err',e.rateLimit?'paused (rate limit)':'sync error');}
+}
+function schedulePush(){
+  if(!token||!gistId)return;
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(pushNow,1500);
+}
+function disconnect(){token='';gistId='';localStorage.removeItem(LS_TOKEN);localStorage.removeItem(LS_GIST);setStatus('','not synced');closeModal();}
+
+/* ============ modal ============ */
+function openModal(html){document.getElementById('modalRoot').innerHTML=
+  '<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">'+html+'</div></div>';}
+function closeModal(){document.getElementById('modalRoot').innerHTML='';}
+function segPick(el,inputId,val){el.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));el.classList.add('on');document.getElementById(inputId).value=val;}
+
+/* ============ events ============ */
+const CATS=['General','Appointment','Birthday','Social','Travel','Work','Date night'];
+function eventModal(ev,presetDate){
+  const e=ev||{id:null,title:'',date:presetDate||todayStr(),time:'',who:'both',cat:'General',notes:'',repeat:'none',count:false};
+  openModal(`
+    <h3>${e.id?'Edit event':'New event'}</h3>
+    <div class="field"><label>Title</label><input id="evTitle" value="${esc(e.title)}" placeholder="Dentist, dinner with friends…"></div>
+    <div class="row">
+      <div class="field" style="flex:1"><label>Date</label><input type="date" id="evDate" value="${e.date}"></div>
+      <div class="field" style="flex:1"><label>Time (optional)</label><input type="time" id="evTime" value="${e.time||''}"></div>
+    </div>
+    <div class="field"><label>Who</label><input type="hidden" id="evWho" value="${e.who}">
+      <div class="seg">
+        <button class="${e.who==='both'?'on':''}" onclick="segPick(this,'evWho','both')">Both</button>
+        <button class="${e.who==='a'?'on':''}" onclick="segPick(this,'evWho','a')">${esc(state.settings.nameA)}</button>
+        <button class="${e.who==='b'?'on':''}" onclick="segPick(this,'evWho','b')">${esc(state.settings.nameB)}</button>
+      </div></div>
+    <div class="row">
+      <div class="field" style="flex:1"><label>Category</label><select id="evCat">${CATS.map(c=>`<option ${c===e.cat?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="field" style="flex:1"><label>Repeats</label><select id="evRep">${Object.keys(REPS).map(r=>`<option value="${r}" ${r===(e.repeat||'none')?'selected':''}>${r==='none'?'Never':r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;color:var(--ink)"><input type="checkbox" id="evCount" ${e.count?'checked':''} style="width:auto;accent-color:var(--a)"> Show countdown on Home</label></div>
+    <div class="field"><label>Notes (optional)</label><textarea id="evNotes" rows="2">${esc(e.notes||'')}</textarea></div>
+    <div class="modal-actions">
+      ${e.id?'<button class="btn gray" onclick="delEvent(\''+e.id+'\')">Delete</button>':''}
+      <button class="btn" onclick="saveEvent('${e.id||''}')">Save</button>
+    </div>`);
+}
+function saveEvent(id){
+  const title=document.getElementById('evTitle').value.trim();
+  const date=document.getElementById('evDate').value;
+  if(!title||!date)return;
+  const data={title,date,time:document.getElementById('evTime').value,who:document.getElementById('evWho').value,cat:document.getElementById('evCat').value,notes:document.getElementById('evNotes').value.trim(),repeat:document.getElementById('evRep').value,count:document.getElementById('evCount').checked};
+  mutate(s=>{ if(id){const ev=s.events.find(x=>x.id===id); if(ev)Object.assign(ev,data);} else s.events.push({id:uid(),...data}); });
+  closeModal();
+}
+function delEvent(id){mutate(s=>{s.events=s.events.filter(e=>e.id!==id);});closeModal();}
+function upcomingEvents(days){
+  const out=[];const t=new Date();t.setHours(0,0,0,0);
+  for(let i=0;i<=days;i++){
+    const ds=dstr(new Date(t.getTime()+i*864e5));
+    state.events.forEach(e=>{if(occursOn(e,ds))out.push({...e,date:ds});});
+  }
+  return out.sort((a,b)=>a.date===b.date?(a.time||'99')<(b.time||'99')?-1:1:a.date<b.date?-1:1);
+}
+function eventRow(e){
+  return `<div class="item" style="cursor:pointer" onclick="eventModal(findEv('${e.id}'))">
+    <div class="grow"><div class="title">${esc(e.title)}</div>
+    <div class="sub">${niceDate(e.date)}${e.time?' · '+fmtTime(e.time):''}${e.repeat&&e.repeat!=='none'?' · repeats '+REPS[e.repeat]:''}${e.cat&&e.cat!=='General'?' · '+esc(e.cat):''}${e.notes?' · '+esc(e.notes):''}</div></div>
+    ${whoChip(e.who)}</div>`;
+}
+function findEv(id){return state.events.find(e=>e.id===id);}
+
+/* ============ views ============ */
+function render(){
+  applyTheme();
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  const m=document.getElementById('main');
+  if(tab==='home')m.innerHTML=vHome();
+  if(tab==='cal')m.innerHTML=vCal();
+  if(tab==='meals')m.innerHTML=vMeals();
+  if(tab==='todos')m.innerHTML=vTodos();
+  if(tab==='notes')m.innerHTML=vNotes();
+  document.getElementById('appTitle').textContent=state.settings.nameA.charAt(0)+' & '+state.settings.nameB.charAt(0)+' Hub';
+}
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render();window.scrollTo(0,0);}});
+
+/* ---- home ---- */
+function vHome(){
+  const h=new Date().getHours();
+  const greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  const up=upcomingEvents(7);
+  const openTodos=state.todos.filter(t=>!t.done);
+  const tonight=(state.meals[todayStr()]||[]);
+  const groOpen=state.grocery.filter(g=>!g.done).length;
+  return `
+  <div class="hero"><div class="hi">${greet} ✨</div>
+  <div class="sub">${niceDate(todayStr())} · ${new Date().toLocaleDateString(undefined,{day:'numeric',month:'long'})}</div></div>
+  <div class="quick">
+    <button onclick="eventModal()"><span>📅</span>Add event</button>
+    <button onclick="tab='todos';render()"><span>✅</span>To dos ${openTodos.length?'<span class="badge">'+openTodos.length+'</span>':''}</button>
+    <button onclick="tab='meals';render()"><span>🍽️</span>Plan meals</button>
+    <button onclick="tab='meals';mealSub='grocery';render()"><span>🛒</span>Groceries ${groOpen?'<span class="badge">'+groOpen+'</span>':''}</button>
+  </div>
+  ${cdCard()}
+  <div class="card"><h2>🍽️ Tonight</h2>
+    ${tonight.length?tonight.map(mm=>`<div class="meal-entry">• ${esc(mm.text)}${mm.recipeId?recBadge(mm.recipeId):''}${mealLink(mm)}</div>`).join(''):'<div class="empty">Nothing planned yet — <a href="#" onclick="tab=\'meals\';render();return false">plan dinner</a></div>'}
+  </div>
+  <div class="card"><h2>📅 Next 7 days <span class="spacer"></span><button class="btn sm ghost" onclick="eventModal()">+ Add</button></h2>
+    ${up.length?up.map(eventRow).join(''):'<div class="empty">Nothing coming up this week</div>'}
+  </div>
+  <div class="card"><h2>✅ Open to dos</h2>
+    ${openTodos.length?openTodos.slice(0,6).map(todoRow).join(''):'<div class="empty">All clear 🎉</div>'}
+    ${openTodos.length>6?'<div class="muted" style="padding-top:8px">+'+(openTodos.length-6)+' more in To Dos</div>':''}
+  </div>`;
+}
+
+function cdCard(){
+  const t=parseD(todayStr());
+  const cds=state.events.filter(e=>e.count).map(e=>{
+    const next=nextOccur(e,todayStr());
+    return next?{e,next,days:Math.round((parseD(next)-t)/864e5)}:null;
+  }).filter(Boolean).sort((a,b)=>a.days-b.days).slice(0,4);
+  if(!cds.length)return'';
+  return '<div class="card"><h2>⏳ Counting down</h2>'+cds.map(c=>
+    `<div class="item" style="cursor:pointer" onclick="eventModal(findEv('${c.e.id}'))">
+      <div class="grow"><div class="title">${esc(c.e.title)}</div><div class="sub">${niceDate(c.next)}</div></div>
+      <b style="color:var(--a);font-size:15px">${c.days===0?'Today! 🎉':c.days===1?'Tomorrow':c.days+' days'}</b>
+    </div>`).join('')+'</div>';
+}
+/* ---- calendar ---- */
+function vCal(){
+  const y=calMonth.getFullYear(),m=calMonth.getMonth();
+  const first=new Date(y,m,1), startDow=(first.getDay()+6)%7, dim=new Date(y,m+1,0).getDate();
+  const today=todayStr();
+  let cells='';
+  for(let i=0;i<startDow;i++)cells+='<div class="cal-cell off"></div>';
+  for(let d=1;d<=dim;d++){
+    const ds=y+'-'+pad(m+1)+'-'+pad(d);
+    const evs=state.events.filter(e=>occursOn(e,ds));
+    const dots=evs.slice(0,3).map(e=>'<i class="'+e.who+'"></i>').join('');
+    cells+=`<div class="cal-cell ${ds===today?'today':''} ${ds===calSel?'sel':''}" onclick="calSel='${ds}';render()">${d}<div class="dots">${dots}</div></div>`;
+  }
+  const selEvents=calSel?state.events.filter(e=>occursOn(e,calSel)).map(e=>({...e,date:calSel})).sort((a,b)=>(a.time||'99')<(b.time||'99')?-1:1):[];
+  const up=upcomingEvents(60);
+  return `
+  <div class="card">
+    <div class="cal-head">
+      <button class="cal-nav" onclick="calMonth=new Date(${y},${m-1},1);render()">‹</button>
+      <b>${MON[m]} ${y}</b>
+      <button class="cal-nav" onclick="calMonth=new Date(${y},${m+1},1);render()">›</button>
+    </div>
+    <div class="cal-grid">${DOW.map(d=>'<div class="dow">'+d+'</div>').join('')}${cells}</div>
+  </div>
+  ${calSel?`<div class="card"><h2>${niceDate(calSel)}<span class="spacer"></span><button class="btn sm" onclick="eventModal(null,'${calSel}')">+ Add</button></h2>
+    ${selEvents.length?selEvents.map(eventRow).join(''):'<div class="empty">Nothing on this day</div>'}</div>`:''}
+  <div class="card"><h2>Upcoming<span class="spacer"></span><button class="btn sm ghost" onclick="eventModal()">+ Add</button></h2>
+    ${up.length?up.map(eventRow).join(''):'<div class="empty">No upcoming events. Add your first one!</div>'}
+  </div>`;
+}
+
+/* ---- meals ---- */
+function recBadge(id){const r=state.recipes.find(r=>r.id===id);if(!r)return'';
+  const b=' <span class="rec">'+esc(r.name)+'</span>';
+  return r.link?' <a href="'+esc(r.link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+b.trim()+'</a>':b;}
+function mealLink(m){return m.link?' <a href="'+esc(m.link)+'" target="_blank" rel="noopener" title="Open recipe" onclick="event.stopPropagation()">🔗</a>':'';}
+function vMeals(){
+  const sub=mealSub;
+  let body='';
+  if(sub==='plan')body=mealPlanView();
+  if(sub==='recipes')body=recipesView();
+  if(sub==='grocery')body=groceryView();
+  return `<div class="subtabs">
+    <button class="${sub==='plan'?'on':''}" onclick="mealSub='plan';render()">Week plan</button>
+    <button class="${sub==='recipes'?'on':''}" onclick="mealSub='recipes';render()">Recipes</button>
+    <button class="${sub==='grocery'?'on':''}" onclick="mealSub='grocery';render()">Grocery list ${state.grocery.filter(g=>!g.done).length?'<span class="badge">'+state.grocery.filter(g=>!g.done).length+'</span>':''}</button>
+  </div>${body}`;
+}
+function mealPlanView(){
+  const ws=mealWeekStart, today=todayStr();
+  const end=new Date(ws);end.setDate(end.getDate()+6);
+  let days='';
+  for(let i=0;i<7;i++){
+    const d=new Date(ws);d.setDate(d.getDate()+i);
+    const ds=dstr(d);
+    const entries=state.meals[ds]||[];
+    days+=`<div class="meal-day ${ds===today?'today':''}">
+      <div class="d">${DOW[i]} <span>${d.getDate()} ${MON[d.getMonth()].slice(0,3)}${ds===today?' · today':''}</span></div>
+      ${entries.map(m=>`<div class="meal-entry"><span style="flex:1">${esc(m.text)}${m.recipeId?recBadge(m.recipeId):''}${mealLink(m)}</span><button class="hbtn ${isFavMeal(m.text)?'on':''}" title="We liked this" onclick="favMeal('${ds}','${m.id}')">${isFavMeal(m.text)?'❤':'♡'}</button><button class="xbtn" onclick="rmMeal('${ds}','${m.id}')">✕</button></div>`).join('')}
+      <div class="addline">
+        <input id="mi_${ds}" placeholder="Add a meal…" onkeydown="if(event.key==='Enter')addMeal('${ds}')">
+        <select id="mr_${ds}"><option value="">recipe…</option>${state.recipes.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select>
+        ${state.mealFavs.length?`<button class="btn sm gray" title="Suggest a favorite" onclick="suggestMeal('${ds}')">🎲</button>`:''}
+        <button class="btn sm" onclick="addMeal('${ds}')">Add</button>
+      </div>
+      <div class="addline" style="margin-top:4px">
+        <input id="ml_${ds}" placeholder="Recipe link (optional)" onkeydown="if(event.key==='Enter')addMeal('${ds}')" style="font-size:12.5px;padding:5px 10px">
+      </div>
+    </div>`;
+  }
+  return `<div class="card">
+    <div class="week-nav">
+      <button class="cal-nav" onclick="shiftWeek(-7)">‹</button>
+      <b>${ws.getDate()} ${MON[ws.getMonth()].slice(0,3)} – ${end.getDate()} ${MON[end.getMonth()].slice(0,3)}</b>
+      <button class="cal-nav" onclick="shiftWeek(7)">›</button>
+    </div>
+    ${days}
+    <button class="btn ghost" style="width:100%;margin-top:4px" onclick="genGrocery()">🛒 Add this week's recipe ingredients to grocery list</button>
+  </div>`;
+}
+function shiftWeek(n){const d=new Date(mealWeekStart);d.setDate(d.getDate()+n);mealWeekStart=d;render();}
+function addMeal(ds){
+  const inp=document.getElementById('mi_'+ds), sel=document.getElementById('mr_'+ds), lnk=document.getElementById('ml_'+ds);
+  const recipeId=sel.value||null;
+  let text=inp.value.trim();
+  if(!text&&recipeId){const r=state.recipes.find(r=>r.id===recipeId);text=r?r.name:'';}
+  if(!text)return;
+  let link=(lnk?lnk.value.trim():'');
+  if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
+  mutate(s=>{(s.meals[ds]=s.meals[ds]||[]).push({id:uid(),text,recipeId,link});});
+}
+function rmMeal(ds,id){mutate(s=>{s.meals[ds]=(s.meals[ds]||[]).filter(m=>m.id!==id);if(!s.meals[ds].length)delete s.meals[ds];});}
+function isFavMeal(text){return state.mealFavs.some(f=>f.text.toLowerCase().trim()===String(text).toLowerCase().trim());}
+function favMeal(ds,id){
+  const m=(state.meals[ds]||[]).find(m=>m.id===id);if(!m)return;
+  const k=m.text.toLowerCase().trim();
+  mutate(s=>{
+    if(s.mealFavs.some(f=>f.text.toLowerCase().trim()===k)){s.mealFavs=s.mealFavs.filter(f=>f.text.toLowerCase().trim()!==k);}
+    else{s.mealFavs.push({id:uid(),text:m.text,recipeId:m.recipeId||null,link:m.link||''});}
+  });
+}
+function suggestMeal(ds){
+  if(!state.mealFavs.length)return;
+  const inp=document.getElementById('mi_'+ds), sel=document.getElementById('mr_'+ds);
+  const current=inp.value.trim().toLowerCase();
+  let pick=state.mealFavs[Math.floor(Math.random()*state.mealFavs.length)];
+  if(state.mealFavs.length>1&&pick.text.toLowerCase()===current){
+    pick=state.mealFavs[(state.mealFavs.indexOf(pick)+1)%state.mealFavs.length];
+  }
+  inp.value=pick.text;
+  if(sel)sel.value=(pick.recipeId&&state.recipes.some(r=>r.id===pick.recipeId))?pick.recipeId:'';
+  const lnk=document.getElementById('ml_'+ds);
+  if(lnk)lnk.value=pick.link||'';
+}
+function genGrocery(){
+  const ws=mealWeekStart;const ids=new Set();
+  for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(d.getDate()+i);(state.meals[dstr(d)]||[]).forEach(m=>{if(m.recipeId)ids.add(m.recipeId);});}
+  if(!ids.size){alert('No recipes assigned this week yet. Pick a recipe when adding a meal.');return;}
+  const have=new Set(state.grocery.map(g=>g.text.toLowerCase().trim()));
+  let added=0;
+  mutate(s=>{ids.forEach(id=>{const r=s.recipes.find(r=>r.id===id);if(r)r.ingredients.forEach(ing=>{const k=ing.toLowerCase().trim();if(k&&!have.has(k)){have.add(k);s.grocery.push({id:uid(),text:ing,done:false});added++;}});});});
+  mealSub='grocery';render();
+}
+function recipesView(){
+  return `<div class="card"><h2>Recipes<span class="spacer"></span><button class="btn sm" onclick="recipeModal()">+ Add</button></h2>
+    ${state.recipes.length?state.recipes.map(r=>`<div class="item" style="cursor:pointer" onclick="recipeModal('${r.id}')">
+      <div class="grow"><div class="title">${esc(r.name)}</div>
+      <div class="sub">${r.ingredients.length} ingredient${r.ingredients.length===1?'':'s'}${r.link?' · has link':''}</div></div>
+      <span class="muted">›</span></div>`).join(''):'<div class="empty">Save recipes here, then assign them to days in the week plan.</div>'}
+  </div>`;
+}
+function recipeModal(id){
+  const r=id?state.recipes.find(r=>r.id===id):{id:null,name:'',ingredients:[],link:''};
+  openModal(`
+    <h3>${id?'Edit recipe':'New recipe'}</h3>
+    <div class="field"><label>Name</label><input id="rcName" value="${esc(r.name)}" placeholder="Chicken stir fry"></div>
+    <div class="field"><label>Ingredients (one per line)</label><textarea id="rcIng" rows="6" placeholder="chicken thighs&#10;broccoli&#10;soy sauce">${esc(r.ingredients.join('\n'))}</textarea></div>
+    <div class="field"><label>Link (optional)</label><input id="rcLink" value="${esc(r.link||'')}" placeholder="https://…"></div>
+    <div class="modal-actions">
+      ${id?'<button class="btn gray" onclick="delRecipe(\''+id+'\')">Delete</button>':''}
+      <button class="btn" onclick="saveRecipe('${id||''}')">Save</button>
+    </div>`);
+}
+function saveRecipe(id){
+  const name=document.getElementById('rcName').value.trim();
+  if(!name)return;
+  const ingredients=document.getElementById('rcIng').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const link=document.getElementById('rcLink').value.trim();
+  mutate(s=>{ if(id){const r=s.recipes.find(r=>r.id===id);if(r)Object.assign(r,{name,ingredients,link});} else s.recipes.push({id:uid(),name,ingredients,link}); });
+  closeModal();
+}
+function delRecipe(id){mutate(s=>{s.recipes=s.recipes.filter(r=>r.id!==id);});closeModal();}
+function groceryView(){
+  const open=state.grocery.filter(g=>!g.done), done=state.grocery.filter(g=>g.done);
+  return `<div class="card"><h2>Grocery list</h2>
+    <div class="addline" style="margin-bottom:8px">
+      <input id="groInput" placeholder="Add item…" onkeydown="if(event.key==='Enter')addGro()">
+      <button class="btn sm" onclick="addGro()">Add</button>
+    </div>
+    ${open.map(groRow).join('')}
+    ${!state.grocery.length?'<div class="empty">List is empty</div>':''}
+    ${done.length?'<div class="muted" style="margin:10px 0 4px;font-weight:600">In the trolley</div>'+done.map(groRow).join('')+'<button class="btn sm gray" style="margin-top:10px" onclick="clearGro()">Clear ticked items</button>':''}
+  </div>`;
+}
+function groRow(g){return `<div class="item ${g.done?'done':''}">
+  <button class="ckb ${g.done?'on':''}" onclick="tgGro('${g.id}')">${g.done?'✓':''}</button>
+  <div class="grow"><div class="title">${esc(g.text)}</div></div>
+  <button class="xbtn" onclick="rmGro('${g.id}')">✕</button></div>`;}
+function addGro(){const i=document.getElementById('groInput');const v=i.value.trim();if(!v)return;mutate(s=>s.grocery.push({id:uid(),text:v,done:false}));const ni=document.getElementById('groInput');if(ni)ni.focus();}
+function tgGro(id){mutate(s=>{const g=s.grocery.find(g=>g.id===id);if(g)g.done=!g.done;});}
+function rmGro(id){mutate(s=>{s.grocery=s.grocery.filter(g=>g.id!==id);});}
+function clearGro(){mutate(s=>{s.grocery=s.grocery.filter(g=>!g.done);});}
+
+/* ---- todos ---- */
+function todoRow(t){return `<div class="item ${t.done?'done':''}">
+  <button class="ckb ${t.done?'on':''}" onclick="tgTodo('${t.id}')">${t.done?'✓':''}</button>
+  <div class="grow"><div class="title">${esc(t.text)}</div></div>
+  ${whoChip(t.who)}
+  <button class="xbtn" onclick="rmTodo('${t.id}')">✕</button></div>`;}
+function vTodos(){
+  const f=todoFilter;
+  let list=state.todos.slice().sort((a,b)=>(a.done-b.done)||(b.created-a.created));
+  if(f!=='all')list=list.filter(t=>t.who===f);
+  const doneCount=state.todos.filter(t=>t.done).length;
+  return `
+  <div class="subtabs">
+    <button class="${f==='all'?'on':''}" onclick="todoFilter='all';render()">All</button>
+    <button class="${f==='both'?'on':''}" onclick="todoFilter='both';render()">Both</button>
+    <button class="${f==='a'?'on':''}" onclick="todoFilter='a';render()">${esc(state.settings.nameA)}</button>
+    <button class="${f==='b'?'on':''}" onclick="todoFilter='b';render()">${esc(state.settings.nameB)}</button>
+  </div>
+  <div class="card">
+    <div class="addline" style="margin-bottom:8px">
+      <input id="todoInput" placeholder="Add a to do…" onkeydown="if(event.key==='Enter')addTodo()">
+      <select id="todoWho"><option value="both">Both</option><option value="a">${esc(state.settings.nameA)}</option><option value="b">${esc(state.settings.nameB)}</option></select>
+      <button class="btn sm" onclick="addTodo()">Add</button>
+    </div>
+    ${list.length?list.map(todoRow).join(''):'<div class="empty">Nothing here</div>'}
+    ${doneCount?'<button class="btn sm gray" style="margin-top:10px" onclick="clearTodos()">Clear completed</button>':''}
+  </div>`;
+}
+function addTodo(){const i=document.getElementById('todoInput');const v=i.value.trim();if(!v)return;const who=document.getElementById('todoWho').value;mutate(s=>s.todos.push({id:uid(),text:v,who,done:false,created:Date.now()}));const ni=document.getElementById('todoInput');if(ni)ni.focus();}
+function tgTodo(id){mutate(s=>{const t=s.todos.find(t=>t.id===id);if(t)t.done=!t.done;});}
+function rmTodo(id){mutate(s=>{s.todos=s.todos.filter(t=>t.id!==id);});}
+function clearTodos(){mutate(s=>{s.todos=s.todos.filter(t=>!t.done);});}
+
+/* ---- notes ---- */
+const TAGS=['Idea','Gift','Places','Home','Other'];
+function vNotes(){
+  return `<div class="card"><h2>Notes & wishlist<span class="spacer"></span><button class="btn sm" onclick="noteModal()">+ Add</button></h2>
+  ${state.notes.length?'<div class="note-grid">'+state.notes.slice().sort((a,b)=>b.created-a.created).map(n=>
+    `<div class="note" onclick="noteModal('${n.id}')"><b>${esc(n.title)}</b><p>${esc(n.body)}</p><span class="chip both">${esc(n.tag)}</span></div>`).join('')+'</div>'
+  :'<div class="empty">Gift ideas, places to go, house plans — jot anything here.</div>'}</div>`;
+}
+function noteModal(id){
+  const n=id?state.notes.find(n=>n.id===id):{id:null,title:'',body:'',tag:'Idea'};
+  openModal(`
+    <h3>${id?'Edit note':'New note'}</h3>
+    <div class="field"><label>Title</label><input id="ntTitle" value="${esc(n.title)}"></div>
+    <div class="field"><label>Note</label><textarea id="ntBody" rows="6">${esc(n.body)}</textarea></div>
+    <div class="field"><label>Tag</label><select id="ntTag">${TAGS.map(t=>`<option ${t===n.tag?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="modal-actions">
+      ${id?'<button class="btn gray" onclick="delNote(\''+id+'\')">Delete</button>':''}
+      <button class="btn" onclick="saveNote('${id||''}')">Save</button>
+    </div>`);
+}
+function saveNote(id){
+  const title=document.getElementById('ntTitle').value.trim();
+  const body=document.getElementById('ntBody').value.trim();
+  if(!title&&!body)return;
+  const tag=document.getElementById('ntTag').value;
+  mutate(s=>{ if(id){const n=s.notes.find(n=>n.id===id);if(n)Object.assign(n,{title:title||'Untitled',body,tag});} else s.notes.push({id:uid(),title:title||'Untitled',body,tag,created:Date.now()}); });
+  closeModal();
+}
+function delNote(id){mutate(s=>{s.notes=s.notes.filter(n=>n.id!==id);});closeModal();}
+
+/* ---- settings ---- */
+function openSettings(){
+  openModal(`
+    <h3>Settings</h3>
+    <div class="row">
+      <div class="field" style="flex:1"><label>Your name</label><input id="stA" value="${esc(state.settings.nameA)}"></div>
+      <div class="field" style="flex:1"><label>Partner's name</label><input id="stB" value="${esc(state.settings.nameB)}"></div>
+    </div>
+    <div class="field"><label>Theme</label><input type="hidden" id="stTheme" value="${state.settings.theme||'auto'}">
+      <div class="seg">
+        <button class="${(state.settings.theme||'auto')==='auto'?'on':''}" onclick="segPick(this,'stTheme','auto');applyThemePreview()">Auto</button>
+        <button class="${state.settings.theme==='light'?'on':''}" onclick="segPick(this,'stTheme','light');applyThemePreview()">Light</button>
+        <button class="${state.settings.theme==='dark'?'on':''}" onclick="segPick(this,'stTheme','dark');applyThemePreview()">Dark</button>
+      </div></div>
+    <div class="field"><label>Device sync — GitHub token</label>
+      ${token?`<div class="muted" style="margin-bottom:8px">✅ Connected. Data syncs through a private GitHub Gist.</div>
+        <div class="row"><button class="btn sm ghost" onclick="pull()">Sync now</button>
+        <button class="danger-link" onclick="disconnect()">Disconnect</button></div>`
+      :`<input id="stToken" placeholder="Paste GitHub token (gist scope)" style="margin-bottom:8px">
+        <button class="btn sm" onclick="doConnect()">Connect</button>
+        <div id="stErr" class="muted" style="color:var(--err);margin-top:6px"></div>
+        <ol class="setup-steps" style="margin-top:10px">
+          <li>Go to <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> (a <b>classic</b> token, not fine grained)</li>
+          <li>Name it <code>our-hub</code>, set expiry to <b>No expiration</b></li>
+          <li>Tick only the <code>gist</code> scope, then Generate</li>
+          <li>Copy the token starting with <code>ghp_</code> and paste it above on <b>each device</b> (same token on both)</li>
+        </ol>`}
+    </div>
+    <div class="field"><label>Backup</label>
+      <div class="row">
+        <button class="btn sm gray" onclick="exportData()">Export JSON</button>
+        <button class="btn sm gray" onclick="document.getElementById('impFile').click()">Import</button>
+        <input type="file" id="impFile" accept=".json" style="display:none" onchange="importData(this)">
+      </div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="saveSettings()">Done</button></div>`);
+}
+function applyThemePreview(){
+  const t=document.getElementById('stTheme').value;
+  state.settings.theme=t;applyTheme();
+}
+function saveSettings(){
+  const a=document.getElementById('stA').value.trim()||'Me';
+  const b=document.getElementById('stB').value.trim()||'Partner';
+  const th=document.getElementById('stTheme').value;
+  mutate(s=>{s.settings.nameA=a;s.settings.nameB=b;s.settings.theme=th;});
+  closeModal();
+}
+async function doConnect(){
+  const t=document.getElementById('stToken').value.trim();
+  const err=document.getElementById('stErr');
+  if(!t){err.textContent='Paste a token first.';return;}
+  err.textContent='';
+  try{await connectGist(t);closeModal();render();}
+  catch(e){err.textContent=e.message;if(!e.rateLimit)token='';}
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='our-hub-backup.json';a.click();
+}
+function importData(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);state=Object.assign(blank(),d);state.updatedAt=Date.now();saveLocal();schedulePush();render();closeModal();}catch(e){alert('Could not read that file.');}};
+  r.readAsText(f);
+}
+
+/* ============ boot ============ */
+render();
+if(token&&gistId){pull();}
+else if(token&&!gistId){connectGist(token).catch(()=>setStatus('err','sync error'));}
+setInterval(()=>{if(token&&gistId&&!syncing&&!document.hidden)pull();},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token&&gistId&&!syncing)pull();});
+window.addEventListener('beforeunload',()=>{if(pushTimer){clearTimeout(pushTimer);}});
+</script>
+</body>
+</html>

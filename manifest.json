@@ -1,0 +1,12 @@
+{
+  "name": "Our Hub",
+  "short_name": "Our Hub",
+  "description": "Shared calendar, meals, to dos and notes",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#e2725b",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
