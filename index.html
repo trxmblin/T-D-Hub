@@ -258,13 +258,14 @@ async function connectGist(newToken){
     const g=(gists||[]).find(g=>g.files&&g.files[GIST_FILE]);
     if(g){gistId=g.id;}
     else{
-      const created=await gh('/gists',{method:'POST',body:JSON.stringify({description:'Our Hub — shared life data (do not delete)',public:false,files:{[GIST_FILE]:{content:JSON.stringify(state)}}})});
+      const created=await gh('/gists',{method:'POST',body:JSON.stringify({description:'Our Hub — shared life data (do not delete)',public:false,files:{[GIST_FILE]:{content:JSON.stringify(state)},'events.ics':{content:buildICS()}}})});
       gistId=created.id;
     }
   }
   localStorage.setItem(LS_TOKEN,token);
   localStorage.setItem(LS_GIST,gistId);
   await pull();
+  await refreshFeed();
   setStatus('ok','synced');
 }
 async function pull(){
@@ -313,9 +314,23 @@ function buildICS(){
   return L.join('\r\n');
 }
 function feedUrl(){return(gistOwner&&gistId)?'https://gist.githubusercontent.com/'+gistOwner+'/'+gistId+'/raw/events.ics':'';}
+function webcalUrl(){const u=feedUrl();return u?u.replace(/^https:\/\//,'webcal://'):'';}
 function copyFeed(){
   const u=feedUrl();if(!u)return;
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(u).then(()=>alert('Feed link copied.')).catch(()=>{});}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(u).then(()=>alert('Feed link copied. Make sure it starts with https when you paste it.')).catch(()=>{});}
+}
+async function refreshFeed(){
+  if(!token||!gistId||rlCheck())return false;
+  try{
+    setStatus('sync','updating feed…');
+    await gh('/gists/'+gistId,{method:'PATCH',body:JSON.stringify({files:{'events.ics':{content:buildICS()}}})});
+    setStatus('ok','synced '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+    return true;
+  }catch(e){console.error(e);setStatus('err',e.rateLimit?'paused (rate limit)':'sync error');return false;}
+}
+async function refreshFeedClick(){
+  const ok=await refreshFeed();
+  alert(ok?'Calendar feed updated. Try subscribing again now.':'Could not update the feed. Check the sync status at the top.');
 }
 function schedulePush(){
   if(!token||!gistId)return;
@@ -786,8 +801,12 @@ function openSettings(){
         ${feedUrl()?`<div style="margin-top:14px"><label style="font-size:12.5px;font-weight:600;color:var(--muted)">Phone calendar feed</label>
         <div class="muted" style="margin:4px 0 6px">Subscribe once and hub events show up in your phone calendar and its widget, updates included.</div>
         <input readonly value="${esc(feedUrl())}" onclick="this.select()" style="font-size:11.5px;margin-bottom:6px">
-        <button class="btn sm gray" onclick="copyFeed()">Copy link</button>
-        <div class="muted" style="margin-top:6px">iPhone: Calendar app → Calendars → Add Calendar → Add Subscription Calendar → paste. Sync once first so the feed exists.</div></div>`:''}`
+        <div class="row" style="margin-bottom:6px">
+          <button class="btn sm gray" onclick="copyFeed()">Copy link</button>
+          <button class="btn sm gray" onclick="refreshFeedClick()">Refresh feed</button>
+        </div>
+        <a href="${esc(webcalUrl())}" class="btn sm" style="display:inline-block;text-decoration:none;color:#fff">Subscribe on this device</a>
+        <div class="muted" style="margin-top:6px">On iPhone tap Subscribe above, or paste the link in Calendar → Calendars → Add Calendar → Add Subscription Calendar. The link must start with <b>https</b>, not http. If it fails, tap Refresh feed first.</div></div>`:''}`
       :`<input id="stToken" placeholder="Paste GitHub token (gist scope)" style="margin-bottom:8px">
         <button class="btn sm" onclick="doConnect()">Connect</button>
         <div id="stErr" class="muted" style="color:var(--err);margin-top:6px"></div>
