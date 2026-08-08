@@ -146,7 +146,6 @@ a{color:var(--b)}
   <button data-t="cal"><span class="ic">📅</span>Calendar</button>
   <button data-t="meals"><span class="ic">🍽️</span>Meals</button>
   <button data-t="todos"><span class="ic">✅</span>To Dos</button>
-  <button data-t="notes"><span class="ic">📝</span>Notes</button>
 </nav>
 
 <div id="modalRoot"></div>
@@ -161,7 +160,8 @@ let state=blank();
 try{const s=localStorage.getItem(LS_STATE); if(s){state=Object.assign(blank(),JSON.parse(s));}}catch(e){}
 let token=localStorage.getItem(LS_TOKEN)||'';
 let gistId=localStorage.getItem(LS_GIST)||'';
-let tab='home', calMonth=new Date(), calSel=null, mealWeekStart=monday(new Date()), mealSub='plan', todoFilter='all';
+let gistOwner=localStorage.getItem('lifehub_owner')||'';
+let tab='home', calMonth=new Date(), calSel=null, mealWeekStart=monday(new Date()), mealSub='plan', todoFilter='all', homeSub='today';
 
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -249,7 +249,8 @@ async function connectGist(newToken){
   token=newToken.trim();
   if(rlCheck())throw new Error('Rate limited — try again after '+new Date(pausedUntil).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
   setStatus('sync','connecting…');
-  await gh('/user'); // validate token
+  const u=await gh('/user'); // validate token
+  gistOwner=u.login;localStorage.setItem('lifehub_owner',gistOwner);
   // Reuse a known gist first so devices never drift onto duplicate copies
   if(gistId){try{await gh('/gists/'+gistId);}catch(e){if(!e.rateLimit)gistId='';else throw e;}}
   if(!gistId){
@@ -271,6 +272,7 @@ async function pull(){
   try{
     syncing=true;setStatus('sync','syncing…');
     const g=await gh('/gists/'+gistId);
+    if(g.owner&&g.owner.login&&g.owner.login!==gistOwner){gistOwner=g.owner.login;localStorage.setItem('lifehub_owner',gistOwner);}
     const f=g.files&&g.files[GIST_FILE];
     if(!f){throw new Error('data file missing in gist');}
     let content=f.content;
@@ -286,9 +288,34 @@ async function pushNow(){
   if(!token||!gistId||rlCheck())return;
   try{
     setStatus('sync','saving…');
-    await gh('/gists/'+gistId,{method:'PATCH',body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(state)}}})});
+    await gh('/gists/'+gistId,{method:'PATCH',body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(state)},'events.ics':{content:buildICS()}}})});
     setStatus('ok','synced '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
   }catch(e){console.error(e);setStatus('err',e.rateLimit?'paused (rate limit)':'sync error');}
+}
+/* calendar feed (.ics) — subscribable in Apple / Google Calendar */
+function icsEsc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');}
+function buildICS(){
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//OurHub//EN','CALSCALE:GREGORIAN','X-WR-CALNAME:Our Hub'];
+  state.events.forEach(e=>{
+    if(!e.date)return;
+    const d=e.date.replace(/-/g,'');
+    L.push('BEGIN:VEVENT','UID:'+e.id+'@our-hub','DTSTAMP:'+stamp);
+    if(e.time){L.push('DTSTART:'+d+'T'+e.time.replace(':','')+'00');}
+    else{L.push('DTSTART;VALUE=DATE:'+d);}
+    const rr={weekly:'FREQ=WEEKLY',fortnightly:'FREQ=WEEKLY;INTERVAL=2',monthly:'FREQ=MONTHLY',yearly:'FREQ=YEARLY'}[e.repeat];
+    if(rr)L.push('RRULE:'+rr);
+    L.push('SUMMARY:'+icsEsc(e.title+(e.who&&e.who!=='both'?' ('+whoName(e.who)+')':'')));
+    if(e.notes)L.push('DESCRIPTION:'+icsEsc(e.notes));
+    L.push('END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  return L.join('\r\n');
+}
+function feedUrl(){return(gistOwner&&gistId)?'https://gist.githubusercontent.com/'+gistOwner+'/'+gistId+'/raw/events.ics':'';}
+function copyFeed(){
+  const u=feedUrl();if(!u)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(u).then(()=>alert('Feed link copied.')).catch(()=>{});}
 }
 function schedulePush(){
   if(!token||!gistId)return;
@@ -361,7 +388,7 @@ function render(){
   applyTheme();
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   const m=document.getElementById('main');
-  if(tab==='home')m.innerHTML=vHome();
+  if(tab==='home')m.innerHTML=vHomeWrap();
   if(tab==='cal')m.innerHTML=vCal();
   if(tab==='meals')m.innerHTML=vMeals();
   if(tab==='todos')m.innerHTML=vTodos();
@@ -371,16 +398,23 @@ function render(){
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render();window.scrollTo(0,0);}});
 
 /* ---- home ---- */
-function vHome(){
+function vHomeWrap(){
   const h=new Date().getHours();
   const greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  return `<div class="hero"><div class="hi">${greet} ✨</div>
+    <div class="sub">${niceDate(todayStr())} · ${new Date().toLocaleDateString(undefined,{day:'numeric',month:'long'})}</div></div>
+    <div class="subtabs">
+      <button class="${homeSub==='today'?'on':''}" onclick="homeSub='today';render()">Today</button>
+      <button class="${homeSub==='week'?'on':''}" onclick="homeSub='week';render()">This week</button>
+    </div>
+    ${homeSub==='today'?vHome():vWeek()}`;
+}
+function vHome(){
   const up=upcomingEvents(7);
   const openTodos=state.todos.filter(t=>!t.done);
   const tonight=(state.meals[todayStr()]||[]);
   const groOpen=state.grocery.filter(g=>!g.done).length;
   return `
-  <div class="hero"><div class="hi">${greet} ✨</div>
-  <div class="sub">${niceDate(todayStr())} · ${new Date().toLocaleDateString(undefined,{day:'numeric',month:'long'})}</div></div>
   <div class="quick">
     <button onclick="eventModal()"><span>📅</span>Add event</button>
     <button onclick="tab='todos';render()"><span>✅</span>To dos ${openTodos.length?'<span class="badge">'+openTodos.length+'</span>':''}</button>
@@ -490,10 +524,26 @@ function mealPlanView(){
       <button class="cal-nav" onclick="shiftWeek(7)">›</button>
     </div>
     ${days}
-    <button class="btn ghost" style="width:100%;margin-top:4px" onclick="genGrocery()">🛒 Add this week's recipe ingredients to grocery list</button>
+    <button class="btn ghost" style="width:100%;margin-top:4px" onclick="copyPrevWeek()">📋 Repeat last week's plan</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="genGrocery()">🛒 Add this week's recipe ingredients to grocery list</button>
   </div>`;
 }
 function shiftWeek(n){const d=new Date(mealWeekStart);d.setDate(d.getDate()+n);mealWeekStart=d;render();}
+function copyPrevWeek(){
+  let copied=0;
+  mutate(s=>{
+    for(let i=0;i<7;i++){
+      const cur=new Date(mealWeekStart);cur.setDate(cur.getDate()+i);
+      const prev=new Date(cur);prev.setDate(prev.getDate()-7);
+      const curKey=dstr(cur), prevKey=dstr(prev);
+      const prevMeals=s.meals[prevKey]||[];
+      if(!prevMeals.length||(s.meals[curKey]&&s.meals[curKey].length))continue;
+      s.meals[curKey]=prevMeals.map(m=>({id:uid(),text:m.text,recipeId:m.recipeId||null,link:m.link||''}));
+      copied+=prevMeals.length;
+    }
+  });
+  if(!copied)alert('Nothing to copy. Days already planned are left alone, and last week needs meals on it.');
+}
 function addMeal(ds){
   const inp=document.getElementById('mi_'+ds), sel=document.getElementById('mr_'+ds), lnk=document.getElementById('ml_'+ds);
   const recipeId=sel.value||null;
@@ -537,7 +587,10 @@ function genGrocery(){
   mealSub='grocery';render();
 }
 function recipesView(){
-  return `<div class="card"><h2>Recipes<span class="spacer"></span><button class="btn sm" onclick="recipeModal()">+ Add</button></h2>
+  return `<div class="card"><h2>Recipes<span class="spacer"></span>
+    <button class="btn sm gray" onclick="document.getElementById('recFile').click()">Import</button>
+    <input type="file" id="recFile" accept=".json" style="display:none" onchange="importRecipes(this)">
+    <button class="btn sm" onclick="recipeModal()">+ Add</button></h2>
     ${state.recipes.length?state.recipes.map(r=>`<div class="item" style="cursor:pointer" onclick="recipeModal('${r.id}')">
       <div class="grow"><div class="title">${esc(r.name)}</div>
       <div class="sub">${r.ingredients.length} ingredient${r.ingredients.length===1?'':'s'}${r.link?' · has link':''}</div></div>
@@ -565,6 +618,31 @@ function saveRecipe(id){
   closeModal();
 }
 function delRecipe(id){mutate(s=>{s.recipes=s.recipes.filter(r=>r.id!==id);});closeModal();}
+function importRecipes(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      let list=JSON.parse(r.result);
+      if(!Array.isArray(list))list=list.recipes||[];
+      const have=new Set(state.recipes.map(x=>x.name.toLowerCase().trim()));
+      let added=0;
+      mutate(s=>{
+        list.forEach(x=>{
+          const name=String(x.name||'').trim();
+          if(!name||have.has(name.toLowerCase()))return;
+          have.add(name.toLowerCase());
+          const ings=Array.isArray(x.ingredients)?x.ingredients.map(i=>String(i).trim()).filter(Boolean):[];
+          s.recipes.push({id:uid(),name,ingredients:ings,link:String(x.link||'').trim()});
+          added++;
+        });
+      });
+      alert(added?added+' recipe'+(added===1?'':'s')+' imported.':'No new recipes found. Duplicates by name are skipped.');
+    }catch(e){alert('Could not read that file. It needs to be the recipes JSON.');}
+    inp.value='';
+  };
+  r.readAsText(f);
+}
 function groceryView(){
   const open=state.grocery.filter(g=>!g.done), done=state.grocery.filter(g=>g.done);
   return `<div class="card"><h2>Grocery list</h2>
@@ -619,6 +697,44 @@ function tgTodo(id){mutate(s=>{const t=s.todos.find(t=>t.id===id);if(t)t.done=!t
 function rmTodo(id){mutate(s=>{s.todos=s.todos.filter(t=>t.id!==id);});}
 function clearTodos(){mutate(s=>{s.todos=s.todos.filter(t=>!t.done);});}
 
+/* ---- this week ---- */
+function vWeek(){
+  const start=new Date();start.setHours(0,0,0,0);
+  let days='', emptyNights=0, totalEvents=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(start);d.setDate(d.getDate()+i);
+    const ds=dstr(d);
+    const evs=state.events.filter(e=>occursOn(e,ds)).sort((a,b)=>(a.time||'99')<(b.time||'99')?-1:1);
+    totalEvents+=evs.length;
+    const meals=state.meals[ds]||[];
+    if(!meals.length)emptyNights++;
+    const free=!evs.length&&!meals.length;
+    days+=`<div class="meal-day ${i===0?'today':''}">
+      <div class="d">${i===0?'Today':i===1?'Tomorrow':DOW[(d.getDay()+6)%7]} <span>${d.getDate()} ${MON[d.getMonth()].slice(0,3)}</span>
+        ${free?'<span class="chip both" style="float:right">free</span>':''}</div>
+      ${evs.length?evs.map(e=>`<div class="meal-entry"><span style="flex:1">${e.time?'<b>'+fmtTime(e.time)+'</b> ':''}${esc(e.title)}</span>${whoChip(e.who)}</div>`).join(''):'<div class="sub" style="color:var(--muted);font-size:12.5px">No events</div>'}
+      <div class="meal-entry" style="color:${meals.length?'var(--ink)':'var(--muted)'};font-size:13px">
+        🍽️ ${meals.length?meals.map(m=>esc(m.text)).join(', '):'<span style="flex:1">Dinner not planned</span>'}
+        ${meals.length?'':`<button class="btn sm gray" onclick="tab='meals';mealSub='plan';mealWeekStart=monday(new Date('${ds}T00:00:00'));render()">Plan</button>`}
+      </div>
+    </div>`;
+  }
+  const openTodos=state.todos.filter(t=>!t.done);
+  const groOpen=state.grocery.filter(g=>!g.done).length;
+  return `
+  <div class="card"><h2>📊 The week ahead</h2>
+    <div class="quick" style="margin-bottom:0">
+      <button onclick="tab='cal';render()"><span>📅</span>${totalEvents} event${totalEvents===1?'':'s'}</button>
+      <button onclick="tab='meals';mealSub='plan';render()"><span>🍽️</span>${emptyNights} night${emptyNights===1?'':'s'} unplanned</button>
+      <button onclick="tab='todos';render()"><span>✅</span>${openTodos.length} to do${openTodos.length===1?'':'s'}</button>
+      <button onclick="tab='meals';mealSub='grocery';render()"><span>🛒</span>${groOpen} to buy</button>
+    </div>
+  </div>
+  <div class="card"><h2>Day by day</h2>${days}</div>
+  <div class="card"><h2>✅ Still open<span class="spacer"></span><button class="btn sm ghost" onclick="tab='todos';render()">All</button></h2>
+    ${openTodos.length?openTodos.slice(0,8).map(todoRow).join(''):'<div class="empty">Nothing outstanding 🎉</div>'}
+  </div>`;
+}
 /* ---- notes ---- */
 const TAGS=['Idea','Gift','Places','Home','Other'];
 function vNotes(){
@@ -666,7 +782,12 @@ function openSettings(){
     <div class="field"><label>Device sync — GitHub token</label>
       ${token?`<div class="muted" style="margin-bottom:8px">✅ Connected. Data syncs through a private GitHub Gist.</div>
         <div class="row"><button class="btn sm ghost" onclick="pull()">Sync now</button>
-        <button class="danger-link" onclick="disconnect()">Disconnect</button></div>`
+        <button class="danger-link" onclick="disconnect()">Disconnect</button></div>
+        ${feedUrl()?`<div style="margin-top:14px"><label style="font-size:12.5px;font-weight:600;color:var(--muted)">Phone calendar feed</label>
+        <div class="muted" style="margin:4px 0 6px">Subscribe once and hub events show up in your phone calendar and its widget, updates included.</div>
+        <input readonly value="${esc(feedUrl())}" onclick="this.select()" style="font-size:11.5px;margin-bottom:6px">
+        <button class="btn sm gray" onclick="copyFeed()">Copy link</button>
+        <div class="muted" style="margin-top:6px">iPhone: Calendar app → Calendars → Add Calendar → Add Subscription Calendar → paste. Sync once first so the feed exists.</div></div>`:''}`
       :`<input id="stToken" placeholder="Paste GitHub token (gist scope)" style="margin-bottom:8px">
         <button class="btn sm" onclick="doConnect()">Connect</button>
         <div id="stErr" class="muted" style="color:var(--err);margin-top:6px"></div>
